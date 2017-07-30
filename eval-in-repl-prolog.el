@@ -42,6 +42,7 @@
   (prolog-consult-region beg end))
 
 
+
 ;;; eir-eval-in-prolog
 ;;;###autoload
 (defun eir-eval-in-prolog ()

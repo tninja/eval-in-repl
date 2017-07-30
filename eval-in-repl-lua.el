@@ -1,11 +1,10 @@
-;;; eval-in-repl-ruby.el --- ESS-like eval for ruby  -*- lexical-binding: t; -*-
+;;; eval-in-repl-lua.el --- ESS-like eval for lua  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014-  Kazuki YOSHIDA
+;; Copyright (C) 2017 Theldoria
 
-;; Author: Kazuki YOSHIDA <kazukiyoshida@mail.harvard.edu>
+;; Author: Theldoria <theldoria@hotmail.com>
 ;; Keywords: tools, convenience
-;; URL: https://github.com/kaz-yos/eval-in-repl
-;; Version: 0.9.6
+;; Version: 0.1.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,9 +22,7 @@
 
 ;;; Commentary:
 
-;; ruby.el-specific file for eval-in-repl
-;; See below for configuration
-;; https://github.com/kaz-yos/eval-in-repl/
+;; lua-mode.el-specific file for eval-in-repl
 
 
 ;;; Code:
@@ -33,38 +30,42 @@
 ;;;
 ;;; Require dependencies
 (require 'eval-in-repl)
-(require 'ruby-mode)
-(require 'inf-ruby)
+(require 'lua-mode)
 
+(defun eval-in-repl-run-lua ()
+  (or (and (comint-check-proc lua-process-buffer)
+           lua-process)
+      (lua-start-process))
+  (switch-to-buffer-other-window lua-process-buffer))
 
 ;;;
-;;; RUBY-MODE RELATED
-;;; eir-send-to-ruby
-(defalias 'eir-send-to-ruby
+;;; LUA-MODE RELATED
+;;; eir-send-to-lua
+(defalias 'eir-send-to-lua
   (apply-partially 'eir-send-to-repl
                    ;; fun-change-to-repl
-                   #'inf-ruby
+                   #'eval-in-repl-run-lua
                    ;; fun-execute
                    #'comint-send-input)
-  "Send expression to *ruby* and have it evaluated.")
+  "Send expression to *lua* and have it evaluated.")
 
 
-;;; eir-eval-in-ruby
-;; http://www.reddit.com/r/emacs/comments/1h4hyw/selecting_regions_rubyel/
+;;; eir-eval-in-lua
+;; http://www.reddit.com/r/emacs/comments/1h4hyw/selecting_regions_luael/
 ;;;###autoload
-(defun eir-eval-in-ruby ()
-  "eval-in-repl for Ruby."
+(defun eir-eval-in-lua ()
+  "eval-in-repl for Lua."
   (interactive)
   ;; Define local variables
   (let* (;; Save current point
-	 (initial-point (point)))
+         (initial-point (point)))
     ;;
-    (eir-repl-start "\\*ruby\\*" #'inf-ruby t)
+    (eir-repl-start "\\*lua\\*" #'run-lua t)
 
     ;; Check if selection is present
     (if (and transient-mark-mode mark-active)
-	;; If selected, send region
-	(eir-send-to-ruby (buffer-substring-no-properties (point) (mark)))
+        ;; If selected, send region
+        (eir-send-to-lua (buffer-substring-no-properties (point) (mark)))
 
       ;; If not selected, do all the following
       ;; Move to the beginning of line
@@ -75,9 +76,9 @@
       (end-of-line)
       ;; Send region if not empty
       (if (not (equal (point) (mark)))
-	  (eir-send-to-ruby (buffer-substring-no-properties (point) (mark)))
-	;; If empty, deselect region
-	(setq mark-active nil))
+          (eir-send-to-lua (buffer-substring-no-properties (point) (mark)))
+        ;; If empty, deselect region
+        (setq mark-active nil))
 
       ;; Move to the next statement code if jumping
       (if eir-jump-after-eval
@@ -86,6 +87,6 @@
         (goto-char initial-point)))))
 
 
-(provide 'eval-in-repl-ruby)
-;;; eval-in-repl-ruby.el ends here
+(provide 'eval-in-repl-lua)
+;;; eval-in-repl-lua.el ends here
 
