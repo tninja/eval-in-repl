@@ -33,20 +33,38 @@
 ;;;
 ;;; Require dependencies
 (require 'eval-in-repl)
+(require 's)
 
+(defcustom eir-use-buffer-specific-shell nil
+  "When t enables use buffer specific shell, for example, when buffer name is xyz.sh, it will use *xyz* name for shell buffer to eval the code. Otherwise always use *shell* buffer"
+  :group 'eval-in-repl
+  :type '(boolean))
 
 ;;;
 ;;; SHELL RELATED
 ;;
+
+(defun shell-buffer-name ()
+  (let* ((basename (file-name-base (buffer-name)))
+		 (script-shell-buffer-name (format "*%s-shell*" basename))
+		 (result (if eir-use-buffer-specific-shell script-shell-buffer-name "*shell*")))
+	result))
+
+;;; eir-shell-repl-start
+(defun eir-shell-repl-start ()
+  "start (buffer specific) shell"
+  (interactive)
+  (shell (shell-buffer-name)))
+
 ;;; eir-send-to-shell
 (defalias 'eir-send-to-shell
   (apply-partially 'eir-send-to-repl
-                   ;; fun-change-to-repl
-                   #'(lambda () (switch-to-buffer-other-window "*shell*"))
-                   ;; fun-execute
-                   #'comint-send-input)
+				   ;; fun-change-to-repl
+				   #'(lambda ()
+					   (switch-to-buffer-other-window (shell-buffer-name)))
+				   ;; fun-execute
+				   #'comint-send-input)
   "Send expression to *shell* and have it evaluated.")
-
 
 ;;; eir-eval-in-shell
 ;;;###autoload
@@ -55,9 +73,10 @@
   (interactive)
   ;; Define local variables
   (let* (;; Save current point
-	 (initial-point (point)))
+		 (initial-point (point))
+		 (sbn (s-replace "*" "\\*" (shell-buffer-name))))
     ;;
-    (eir-repl-start "\\*shell\\*" #'shell t)
+    (eir-repl-start sbn #'shell t)
 
     ;; Check if selection is present
     (if (and transient-mark-mode mark-active)
